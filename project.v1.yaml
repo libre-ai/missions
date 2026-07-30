@@ -1,0 +1,96 @@
+# Fiche d'état du projet — autorité de l'état depuis ADR-0020 (design §6.2).
+# La section statut du README est générée depuis cette fiche (sentinelles),
+# jamais éditée à la main ; l'avancement est calculé, jamais déclaré.
+schema_version: libre-ai.project.v1
+project: missions
+repository: libre-ai/missions
+kind: application
+layer: couche-2
+statement:
+  for: "une personne qui travaille avec des agents"
+  who_faces: "du travail d'agents invisible et des validations implicites"
+  enables: "suivre tâches, blocages, approbations et preuves sur une surface commune humain-agents"
+  producing:
+    - "un tableau de missions où chaque approbation et chaque preuve est tracée"
+  without_depending_on:
+    - "aucune action d'agent sans autorisation vérifiable"
+summary: "Surface de travail humain-agents : tâches, blocages, approbations et preuves (application couche 2, home historique agent-board)."
+current_situation: >-
+  L'application Missions (couche de commande fail-closed, autorisation conforme au datalog missions-v1, persistance sur la brique data) est greffée et verte ; l'intégration d'agents réels reste à venir.
+scope:
+  - "tâches, blocages, approbations, preuves"
+  - "autorisation vérifiable de chaque action d'agent"
+non_goals:
+  - "huitième produit (application de la couche 2 — LEXICON §1.1)"
+  - "action d'agent sans autorisation"
+dependencies:
+  - on: libre-ai/data
+    why: "persistance et transactions multi-tenant"
+    pinned: "git-dep épinglée par SHA dans le manifest de ce repo"
+  - on: libre-ai/web-platform
+    why: "socle applicatif Bun.serve + React"
+    pinned: "git-dep épinglée par SHA dans le manifest de ce repo"
+  - on: libre-ai/testing
+    why: "Postgres éphémère des tests d'intégration"
+    pinned: "git-dep épinglée par SHA dans le manifest de ce repo"
+  - on: libre-ai/contracts
+    why: "autorité des contrats (datalog missions-v1)"
+    pinned: "git-dep épinglée par SHA dans le manifest de ce repo"
+  - on: libre-ai/governance
+    why: "gabarit de flotte et gates de qualité"
+    pinned: "git-dep épinglée par SHA dans le manifest de ce repo"
+maturity: usable
+confidence: medium
+exposure: spec-published
+freshness:
+  last_verified_on: "2026-07-30"
+hypothesis: >
+  A mission authority built on quorum blind review and fail-closed
+  per-agent revocation exceeds Multica-class agent surfaces on
+  security/audit while closing their automation/UX lead.
+evidence_required:
+  - parity audit against the 36-feature Multica baseline (docs/parity/audits/PARITY-agents-multica.md)
+  - the 8 EXCEEDED security traits maintained (quorum blind review, revocation, evidence isolation, capability binding, planning-only handoff)
+  - top-3 T1 gaps addressed (autopilot scheduling, skills library, squads routing) or owner-rejected with rationale
+promotion_criteria:
+  - to: usable-verifiable
+    when: ABSENT-T1 gaps <= 2 of 8 (baseline 25% functional shortfall) with the orchestrator lock in place
+  - to: proven
+    when: coverage >= 32 of 36 baseline traits across two consecutive parity audits, EXCEEDED set intact
+kill_predicates:
+  - id: shortfall-growth
+    predicate: ABSENT-T1 gaps > 8 of 36 (worse than the 2026-07 baseline)
+    window: any parity audit after wave-4 activation
+    source: docs/parity/audits/PARITY-agents-multica.md
+  - id: execution-handoff-breach
+    predicate: any handoff granting execution capability enters the covered set
+    source: docs/parity/audits/PARITY-agents-multica.md
+benchmark:
+  product: Multica
+  url: https://github.com/multica-ai/multica
+scope_stability: stable
+phases:
+  - id: activation
+    title: Activation multi-repo (γ 3.5)
+    exit_criteria:
+      - id: graft-green
+        text: Contenu greffé depuis le hub avec son histoire, workspace autonome vert en CI réelle, description dégelée.
+        weight: 2
+        status: accepted
+        evidence:
+          date: "2026-07-30"
+          reference: "gate-acceptance-log 2026-07-30 (ligne 3.5), PR hub #286"
+  - id: agent-integration
+    title: Intégration agents réelle
+    exit_criteria:
+      - id: agent-integration-done
+        text: Des agents réels alimentent tâches, blocages et preuves via le protocole de commande, parcours e2e verts.
+        weight: 4
+        status: pending
+  - id: exposure
+    title: Exposition vérifiable
+    exit_criteria:
+      - id: promotion-met
+        text: Les conditions de promotion vers usable-verifiable déclarées par cette fiche (promotion_criteria) sont réunies et vérifiées.
+        weight: 4
+        status: pending
