@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { withTenantDbTransaction } from "@libre-ai/data";
 import { createTestDatabase, type TestDatabase } from "@libre-ai/testing";
@@ -11,9 +11,8 @@ const DATA_MIGRATIONS = join(
   import.meta.dir,
   "..",
   "..",
-  "..",
-  "..",
-  "packages",
+  "node_modules",
+  "@libre-ai",
   "data",
   "migrations",
 );
@@ -43,6 +42,12 @@ const PROPOSE: Command = {
   budgets: { maxDurationSeconds: 3600, maxToolCalls: 100, network: "none" },
   acceptanceCriteria: ["criterion-a"],
 };
+
+// Standalone workspaces surface what the hub run masked: an unclosed
+// PGlite instance makes bun test exit non-zero even with every test green.
+afterAll(async () => {
+  await tdb.close();
+});
 
 describe("mission command service — full authorized journey", () => {
   test("propose → assess → approve → start → submit → accept across roles", async () => {

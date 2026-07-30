@@ -4,7 +4,7 @@
 // cross-tenant access, replay and single-role capture, and that terminal
 // missions are immutable. Runs against the real PostgreSQL barrier (PGlite).
 
-import { beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { createTestDatabase, type TestDatabase } from "@libre-ai/testing";
 import type { MissionRole } from "../authz/mission-authorization";
@@ -15,9 +15,8 @@ const DATA_MIGRATIONS = join(
   import.meta.dir,
   "..",
   "..",
-  "..",
-  "..",
-  "packages",
+  "node_modules",
+  "@libre-ai",
   "data",
   "migrations",
 );
@@ -149,6 +148,12 @@ const FORBIDDEN: Record<MissionRole, (keyof typeof SAMPLE)[]> = {
     "AbandonMission",
   ],
 };
+
+// Standalone workspaces surface what the hub run masked: an unclosed
+// PGlite instance makes bun test exit non-zero even with every test green.
+afterAll(async () => {
+  await tdb.close();
+});
 
 describe("qualification — role confusion is refused before any I/O", () => {
   for (const [role, forbidden] of Object.entries(FORBIDDEN) as [
