@@ -9,11 +9,11 @@ Pour une personne qui travaille avec des agents, qui rencontre du travail d'agen
 <!-- libre-ai:project-status:begin -->
 <!-- Section générée depuis project.v1.yaml — ne pas éditer à la main. -->
 
-- Situation actuelle : L'application Missions (couche de commande fail-closed, autorisation conforme au datalog missions-v1, persistance sur la brique data) est greffée et verte ; l'intégration d'agents réels reste à venir.
+- Situation actuelle : L'application Missions (couche de commande fail-closed, autorisation conforme au datalog missions-v1, persistance sur la brique data) est greffée et verte ; l'intégration d'agents réels reste à venir. Arbitrage propriétaire du 2026-08-18 (« Go phases 1-2 ») : le découpage surface d'écriture authentifiée (phase 1) et boucle d'observation simulation-only (phase 2) est acté et devient le plan de ce dépôt ; aucune ligne d'implémentation n'est encore écrite, elle vient dans des sessions dédiées.
 - Maturité : usable
 - Exposition : spec-published
 - Confiance : medium
-- Preuves vérifiées le : 2026-07-30
+- Preuves vérifiées le : 2026-08-18
 - Avancement : 20 % du périmètre actuellement déclaré
 
 <!-- libre-ai:project-status:end -->
