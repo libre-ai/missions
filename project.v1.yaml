@@ -16,7 +16,7 @@ statement:
     - "aucune action d'agent sans autorisation vérifiable"
 summary: "Surface de travail humain-agents : tâches, blocages, approbations et preuves (application couche 2, home historique agent-board)."
 current_situation: >-
-  L'application Missions (couche de commande fail-closed, autorisation conforme au datalog missions-v1, persistance sur la brique data) est greffée et verte ; l'intégration d'agents réels reste à venir.
+  L'application Missions (couche de commande fail-closed, autorisation conforme au datalog missions-v1, persistance sur la brique data) est greffée et verte ; l'intégration d'agents réels reste à venir. Arbitrage propriétaire du 2026-08-18 (« Go phases 1-2 ») : le découpage surface d'écriture authentifiée (phase 1) et boucle d'observation simulation-only (phase 2) est acté et devient le plan de ce dépôt ; aucune ligne d'implémentation n'est encore écrite, elle vient dans des sessions dédiées.
 scope:
   - "tâches, blocages, approbations, preuves"
   - "autorisation vérifiable de chaque action d'agent"
@@ -43,7 +43,7 @@ maturity: usable
 confidence: medium
 exposure: spec-published
 freshness:
-  last_verified_on: "2026-07-30"
+  last_verified_on: "2026-08-18"
 hypothesis: >
   A mission authority built on quorum blind review and fail-closed
   per-agent revocation exceeds Multica-class agent surfaces on
@@ -54,7 +54,7 @@ evidence_required:
   - top-3 T1 gaps addressed (autopilot scheduling, skills library, squads routing) or owner-rejected with rationale
 promotion_criteria:
   - to: usable-verifiable
-    when: ABSENT-T1 gaps <= 2 of 8 (baseline 25% functional shortfall) with the orchestrator lock in place
+    when: "ABSENT-T1 gaps <= 2 of 8 (baseline 25% functional shortfall) AND the phase-2 dogfooding milestone reached — owner authorizes, refuses or observes one end-to-end simulation-only mission run — with the orchestrator lock (WP-G2-A01, ADR-0004 point 8) in place"
   - to: proven
     when: coverage >= 32 of 36 baseline traits across two consecutive parity audits, EXCEEDED set intact
 kill_predicates:
@@ -80,17 +80,69 @@ phases:
         evidence:
           date: "2026-07-30"
           reference: "gate-acceptance-log 2026-07-30 (ligne 3.5), PR hub #286"
-  - id: agent-integration
-    title: Intégration agents réelle
+  - id: authenticated-write-surface
+    title: "Phase 1 — surface d'écriture authentifiée"
+    note: >-
+      Arbitrage propriétaire 2026-08-18 (« Go phases 1-2 ») : ce découpage est
+      le plan du dépôt ; l'implémentation vient dans des sessions dédiées, pas
+      dans cette fiche. Le choix du pont TS↔Rust vers
+      authz-biscuit::authorize() (FFI/N-API vs sidecar HTTP local durci) est
+      une décision à trancher au lancement du code ; la réimplémentation TS de
+      la vérification Biscuit est écartée par l'axe sécurité (#1).
     exit_criteria:
-      - id: agent-integration-done
-        text: Des agents réels alimentent tâches, blocages et preuves via le protocole de commande, parcours e2e verts.
-        weight: 4
+      - id: command-endpoint
+        text: POST /api/missions/commands borné au Command v1, appelant executeMissionCommand réel — plus de surface d'écriture fixture-only.
+        weight: 1
+        status: pending
+      - id: real-biscuit-verification
+        text: Vérification Biscuit réelle (pont TS↔Rust vers authz-biscuit::authorize()) remplace le Principal fait-confiance à la frontière de requête.
+        weight: 1
+        status: pending
+      - id: e2e-http-qualification
+        text: Parcours e2e HTTP bout-en-bout (requête signée → décision d'autorisation → transition d'état → persistance) sur le modèle de qualification.integration.test.ts.
+        weight: 1
+        status: pending
+  - id: simulation-only-observation-loop
+    title: "Phase 2 — boucle d'observation simulation-only"
+    note: >-
+      Arbitrage propriétaire 2026-08-18 (« Go phases 1-2 »). Adaptateur borné
+      par ADR-0004 point 8 (WP-G2-A01) : cœur de contrôle Rust simulation-only
+      contre un faux harness, aucun processus, worker Pi, accès
+      filesystem/réseau/provider/secret/persistence ni mission réelle.
+      Marquage explicite (doc + UI) « simulation-only, aucun effet système »
+      obligatoire tant que le harness n'a pas franchi WP1 — cohérent avec le
+      non-goal existant de docs/apps/missions.md. Le jalon dogfooding de
+      Missions est ce run : le propriétaire autorise, refuse ou observe une
+      mission simulation-only de bout en bout via cette boucle.
+    exit_criteria:
+      - id: control-adapter-green
+        text: Adaptateur appelant orchestrator::evaluate_control/evaluate_budget_event (WP-G2-A01, vert) contre un faux harness, verdicts traduits en RecordOrchestratorEvent signés par un token orchestrateur borné — plus jamais un booléen fait-confiance.
+        weight: 1
+        status: pending
+      - id: cockpit-real-data
+        text: Cockpit humain rendu depuis des données réelles (plus depuis COCKPIT_FIXTURE), marqué explicitement « simulation-only, aucun effet système ».
+        weight: 1
+        status: pending
+      - id: owner-dogfooding-run
+        text: Le propriétaire autorise, refuse ou observe au moins un run de mission simulation-only de bout en bout via cette boucle — jalon dogfooding de Missions.
+        weight: 1
         status: pending
   - id: exposure
-    title: Exposition vérifiable
+    title: "Phase 3 — sortie de spec-published, exposition vérifiable"
+    note: >-
+      Non couverte par le « Go phases 1-2 » du 2026-08-18 — reste pending. Le
+      goulot de l'évidence 8 du produit zéro (boucle réelle sous identité
+      agent) est le HARNESS (WP1-WP3), pas Missions ; D3 (ADR-0011) interdit à
+      l'orchestrateur/harness de s'auto-merger. ADR-0016 (protocole de revue
+      humaine gaté par hash) reste proposed et deferred par décision
+      propriétaire — dépendance FUTURE éventuelle d'une approbation opposable
+      du quorum v2, non liée ici.
     exit_criteria:
+      - id: real-deployment
+        text: Déploiement réel (I-15), premier run simulation-only observable publiquement en digest.
+        weight: 1
+        status: pending
       - id: promotion-met
         text: Les conditions de promotion vers usable-verifiable déclarées par cette fiche (promotion_criteria) sont réunies et vérifiées.
-        weight: 4
+        weight: 1
         status: pending
